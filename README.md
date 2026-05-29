@@ -66,11 +66,12 @@ your agent / tool / MCP server / A2A skill
 
 ## Install
 
+**Go — live:**
 ```sh
-npm i veritrail        # TypeScript / Node
-go get github.com/Daily-Nerd/veritrail/go   # Go
+go get github.com/Daily-Nerd/veritrail/go@v0.1.0
 ```
-*(packages publish as the reference lands — see [ROADMAP](ROADMAP.md).)*
+
+**npm — publishing soon** (package is built and conformant; release is pending the npm org). It will publish as either `veritrail` or `@daily-nerd/veritrail` — see [ROADMAP](ROADMAP.md).
 
 ## Spec & conformance
 
