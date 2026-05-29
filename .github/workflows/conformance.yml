@@ -1,0 +1,38 @@
+name: conformance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  cross-impl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build + test Go reference
+        run: |
+          cd go
+          go build -o ../bin/veritrail-verify-go ./cmd/veritrail-verify
+          go test ./...
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build + test TS reference
+        run: |
+          cd ts
+          npm install
+          npm run build
+          npm test
+
+      - name: Cross-implementation conformance (Go ≡ TS, byte-identical)
+        run: node conformance/compare.mjs

@@ -1,0 +1,39 @@
+{
+  "name": "veritrail",
+  "version": "0.1.0",
+  "description": "Veritrail — portable verifiable-receipt toolkit: JCS, multihash hash-strings, JWS signing/verification, lineage chains, and MCP/A2A co-signing middleware.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "veritrail-verify": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test test/*.test.mjs",
+    "pretest": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@a2a-js/sdk": "^0.3.13",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/node": "^25.9.1",
+    "typescript": "^5.4.5"
+  }
+}
