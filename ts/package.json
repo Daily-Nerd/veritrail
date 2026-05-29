@@ -1,7 +1,7 @@
 {
   "name": "veritrail",
   "version": "0.1.0",
-  "description": "Veritrail — portable verifiable-receipt toolkit: JCS, multihash hash-strings, JWS signing/verification, lineage chains, and MCP/A2A co-signing middleware.",
+  "description": "The verifiable trail of agent actions — signed, tamper-evident execution receipts for AI agents (MCP & A2A): JWS signing/verification, JCS canonicalization, lineage chains, and co-signing middleware.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/demo.*",
+    "!dist/**/server.*"
   ],
   "scripts": {
     "build": "tsc",
@@ -30,6 +32,31 @@
     "node": ">=18"
   },
   "license": "Apache-2.0",
+  "author": "Daily-Nerd",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daily-Nerd/veritrail.git",
+    "directory": "ts"
+  },
+  "homepage": "https://github.com/Daily-Nerd/veritrail#readme",
+  "bugs": "https://github.com/Daily-Nerd/veritrail/issues",
+  "keywords": [
+    "ai-agents",
+    "mcp",
+    "a2a",
+    "agent-receipts",
+    "attestation",
+    "provenance",
+    "tamper-evident",
+    "jws",
+    "ed25519",
+    "jcs",
+    "verifiable",
+    "audit"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@a2a-js/sdk": "^0.3.13",
     "@modelcontextprotocol/sdk": "^1.29.0",

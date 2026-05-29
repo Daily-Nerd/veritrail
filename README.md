@@ -2,6 +2,13 @@
 <p align="center"><em>The verifiable trail of agent actions.</em></p>
 <p align="center">Signed, tamper-evident execution receipts for AI agents — under MCP and beside A2A.</p>
 
+<p align="center">
+  <a href="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml"><img src="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml/badge.svg" alt="conformance"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a>
+  <a href="https://www.npmjs.com/package/veritrail"><img src="https://img.shields.io/npm/v/veritrail.svg" alt="npm"></a>
+  <img src="https://img.shields.io/badge/conformance-41%2F41-brightgreen" alt="conformance 41/41">
+</p>
+
 ---
 
 > **Status: early / design-validated.** The protocol and a two-language reference (Go + TypeScript) are validated byte-for-byte against a conformance suite. APIs will change before `v1`. See [ROADMAP](ROADMAP.md).
