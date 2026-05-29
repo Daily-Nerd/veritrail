@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Daily-Nerd/veritrail/go/veritrail"
+	"github.com/Daily-Nerd/veritrail/go"
 )
 
 // vectorFile represents a test vector loaded from disk.
@@ -23,8 +23,8 @@ type vectorFile struct {
 func loadVectors(t *testing.T) []vectorFile {
 	t.Helper()
 	// vectors live under conformance/vectors at the repo root;
-	// this package dir is go/veritrail, so go up two then into conformance/vectors.
-	dir := filepath.Join("..", "..", "conformance", "vectors")
+	// this package dir is the module root (go/), so go up one then into conformance/vectors.
+	dir := filepath.Join("..", "conformance", "vectors")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatalf("cannot read vectors dir %s: %v", dir, err)

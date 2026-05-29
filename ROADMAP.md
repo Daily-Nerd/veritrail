@@ -38,4 +38,4 @@ The hard truth: a free dependency with weak organic demand wins by being *carrie
 ## Honest watch-items
 
 - **Absorption:** native receipt fields in MCP/A2A, or an incumbent governance toolkit, could commoditize the primitive. Be the obvious dependency *before* that — and stay the best-engineered, most-conformant one.
-- **Scope discipline:** veritrail signs and verifies *what a performer did*. It is not an observability platform, an AI code reviewer, or a governance suite. Stay a primitive.
+- **Scope discipline:** veritrail signs and verifies *what a performer did*. It is not an observability platform, an AI code reviewer, or a governance suite. Stay a primitive. 
