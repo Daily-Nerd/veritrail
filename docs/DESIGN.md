@@ -62,7 +62,7 @@ The canonical logical structure (encoding rules in §3–4).
 
 ```
 Receipt {
-  v:               "veritrail/0.2"            // spec version (string, required)
+  v:               "veritrail/0.1"            // spec version (string, required)
   binding:         "mcp" | "a2a"           // execution context discriminator (required, signed) — §13/§14
   action_ref:      <hashstr> | null         // multihash of the auth token the performer CLAIMS was used (§6); null if none
   performer_id:    <string>                // stable identifier of the performer; resolves to a key (§10)

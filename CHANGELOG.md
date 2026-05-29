@@ -2,9 +2,11 @@
 
 All notable changes to veritrail are documented here. Format: [Keep a Changelog](https://keepachangelog.com/); versioning: [SemVer](https://semver.org/).
 
-## [0.1.0] — unreleased
+## [0.1.0] — 2026-05-29
 
 Initial reference release. Protocol version `veritrail/0.1`.
+
+**Release status:** Go module **live** (`go get github.com/Daily-Nerd/veritrail/go@v0.1.0`, tag `go/v0.1.0`). npm publish **pending** (awaiting the npm org / final package-name decision: `veritrail` vs `@daily-nerd/veritrail`).
 
 ### Added
 - **Receipt protocol** — performer-attested, content-addressed execution receipts for AI agent actions (`docs/DESIGN.md`).
