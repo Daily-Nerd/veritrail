@@ -13,7 +13,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/Daily-Nerd/veritrail/go/veritrail"
+	"github.com/Daily-Nerd/veritrail/go"
 	"github.com/gowebpki/jcs"
 )
 

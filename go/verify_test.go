@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Daily-Nerd/veritrail/go/veritrail"
+	"github.com/Daily-Nerd/veritrail/go"
 )
 
 // TestVectors_Verify drives the verify command against every verify-*.json vector.

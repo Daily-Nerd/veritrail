@@ -67,7 +67,11 @@ your agent / tool / MCP server / A2A skill
 
 **Go — live:**
 ```sh
-go get github.com/Daily-Nerd/veritrail/go@v0.1.0
+go get github.com/Daily-Nerd/veritrail/go@v0.1.1                              # library
+go install github.com/Daily-Nerd/veritrail/go/cmd/veritrail-verify@v0.1.1     # CLI (binary: veritrail-verify)
+```
+```go
+import "github.com/Daily-Nerd/veritrail/go"   // package veritrail → veritrail.Sign(...), veritrail.Verify(...)
 ```
 
 **npm — publishing soon** (package is built and conformant; release is pending the npm org). It will publish as either `veritrail` or `@daily-nerd/veritrail` — see [ROADMAP](ROADMAP.md).

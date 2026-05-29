@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Daily-Nerd/veritrail/go/veritrail"
+	"github.com/Daily-Nerd/veritrail/go"
 )
 
 // TestSign_RoundTripsWithVerify proves the public Sign API produces a JWS that

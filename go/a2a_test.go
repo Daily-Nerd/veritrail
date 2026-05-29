@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Daily-Nerd/veritrail/go/veritrail"
+	"github.com/Daily-Nerd/veritrail/go"
 )
 
 // TestVectors_A2AArtifactHash drives the a2a-artifact-hash command against every a2a-*.json vector.
