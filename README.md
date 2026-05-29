@@ -1,0 +1,75 @@
+<h1 align="center">veritrail</h1>
+<p align="center"><em>The verifiable trail of agent actions.</em></p>
+<p align="center">Signed, tamper-evident execution receipts for AI agents — under MCP and beside A2A.</p>
+
+---
+
+> **Status: early / design-validated.** The protocol and a two-language reference (Go + TypeScript) are validated byte-for-byte against a conformance suite. APIs will change before `v1`. See [ROADMAP](ROADMAP.md).
+
+## What it is
+
+When an AI agent performs an action — a tool call, a task, a step in a chain — **veritrail** lets the party that *performed* it emit a small, signed, content-addressed **receipt** of what it did, what it returned, and what it cost. Anyone can later **verify** that receipt independently, walk a multi-hop **chain** of them, and **replay** the attested timeline.
+
+It is the difference between *"trust me, here's a summary"* and *"check me — here's a record you can verify."*
+
+```ts
+import { sign, verify } from "veritrail";
+
+// the performer signs what it did
+const receipt = await sign(key, {
+  binding: "mcp",
+  method: "mcp:add",
+  inputs_hash:  hashOf(params),
+  outputs_hash: hashOf(result),
+  cost: { tokens: "0", usd_micros: "0", wall_ms: "3", rail_ref: null },
+});
+
+// anyone verifies it independently — offline
+const verdict = await verify(receipt, { keys });   // -> { valid: true, reason: "ok" }
+```
+
+```sh
+$ veritrail verify receipt.jws
+  valid: true  reason: ok
+```
+
+## Why depend on it instead of rolling your own
+
+Getting receipts *right* is deceptively hard — deterministic canonicalization, signature verification that resists the classic JOSE attacks, chain integrity that resists splicing. veritrail ships that, proven:
+
+- **Deterministic by construction** — RFC 8785 JCS canonicalization, proven **byte-identical across two independent implementations** (Go + TS) on a public conformance suite. Two verifiers always agree.
+- **Hardened verification** — Ed25519 + ES256 (JWS), with the dangerous paths closed: rejects `alg:none`, algorithm substitution, `jwk`/`jku`/`x5*` header key-injection, non-canonical payloads, unknown/revoked keys.
+- **Chain integrity** — multi-hop receipts link `parent → child` into a tamper-evident lineage, with a `parent_performer_id` binding that defeats foreign-parent splicing.
+- **Rides the existing rails** — one `_meta` field on an MCP tool result; one artifact-metadata entry on an A2A task. **No new transport, no extra round-trip.** A client that doesn't understand it ignores it.
+
+## What it proves — and what it does NOT (honest boundary)
+
+**Proves:** performer non-repudiation, response-byte integrity, which authorization token was referenced (by hash), and verifiable cost. A receipt cannot be altered after signing without detection, and a multi-hop chain shows who-did-what-under-whom.
+
+**Does NOT prove:** that the action was *correct* or *non-hallucinated*; that a world side-effect actually happened; *intent integrity* (a prompt-injected-but-authorized request still produces a valid receipt). veritrail attests *what the performer did and returned* — it is **check-me, not trust-me**, not a proof the outcome was right. We will never market it beyond that line.
+
+## Layers
+
+```
+your agent / tool / MCP server / A2A skill
+        │  emits a signed receipt on each action
+        ▼
+   veritrail receipt  ──►  verify (offline)  ──►  chain / replay  ──►  [optional] transparency log
+```
+
+## Install
+
+```sh
+npm i veritrail        # TypeScript / Node
+go get github.com/Daily-Nerd/veritrail/go   # Go
+```
+*(packages publish as the reference lands — see [ROADMAP](ROADMAP.md).)*
+
+## Spec & conformance
+
+- **[docs/DESIGN.md](docs/DESIGN.md)** — the full protocol: receipt object, canonicalization, signing, the verification algorithm, chain semantics, MCP/A2A bindings, threat model.
+- **Conformance vectors** — a language-agnostic suite; any implementation that passes is interoperable. (Porting in — see ROADMAP.)
+
+## License
+
+[Apache-2.0](LICENSE). Build on it.
