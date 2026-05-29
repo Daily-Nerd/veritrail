@@ -8,7 +8,6 @@
  * On error, emits {"error":"<code>"} to stdout, exit 0.
  * No logs/banners to stdout (use stderr).
  */
-import { readFileSync } from 'node:fs';
 import { jcs } from './commands/jcs.js';
 import { hashstring } from './commands/hashstring.js';
 import { digest } from './commands/digest.js';
@@ -20,7 +19,17 @@ import { verifyChain } from './commands/verify-chain.js';
 import { a2aArtifactHash } from './commands/a2a-artifact-hash.js';
 import { jcsString } from './commands/jcs.js';
 
-function main() {
+async function readStdin(): Promise<string> {
+  // Robust across platforms: async-iterate the stream. Avoids the
+  // readFileSync(0)/'/dev/stdin' EAGAIN-on-Linux-pipe failure seen in CI.
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer));
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function main() {
   const command = process.argv[2];
   if (!command) {
     process.stdout.write(JSON.stringify({ error: 'missing_command' }) + '\n');
@@ -29,7 +38,7 @@ function main() {
 
   let raw: string;
   try {
-    raw = readFileSync('/dev/stdin', 'utf8');
+    raw = await readStdin();
   } catch {
     process.stdout.write(JSON.stringify({ error: 'stdin_read_error' }) + '\n');
     return;
@@ -85,4 +94,6 @@ function main() {
   process.stdout.write(jcsString(result) + '\n');
 }
 
-main();
+main().catch(() => {
+  process.stdout.write(JSON.stringify({ error: 'internal_error' }) + '\n');
+});
