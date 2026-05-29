@@ -5,7 +5,6 @@
 <p align="center">
   <a href="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml"><img src="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml/badge.svg" alt="conformance"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a>
-  <a href="https://www.npmjs.com/package/veritrail"><img src="https://img.shields.io/npm/v/veritrail.svg" alt="npm"></a>
   <img src="https://img.shields.io/badge/conformance-41%2F41-brightgreen" alt="conformance 41/41">
 </p>
 
