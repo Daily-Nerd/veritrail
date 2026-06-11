@@ -1,0 +1,57 @@
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # 1. Maintain the release PR. On its merge, cut tags + GitHub Releases.
+  #    Versions are linked (go + ts share one line) — see release-please-config.json.
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      ts_release_created: ${{ steps.rp.outputs['ts--release_created'] }}
+      ts_tag: ${{ steps.rp.outputs['ts--tag_name'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # 2. Publish the npm package when the ts component is released.
+  #    Auth is OIDC trusted publishing (no NPM_TOKEN) — provenance is attested.
+  #    Requires a trusted publisher registered on npm for this repo + this workflow file.
+  publish-npm:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.ts_release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # mint OIDC token for npm provenance
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      # OIDC trusted publishing + provenance needs npm >= 11.5.1;
+      # the runner ships an older npm, so upgrade first.
+      - name: Upgrade npm (OIDC support)
+        run: npm install -g npm@latest
+
+      - name: Build
+        run: |
+          cd ts
+          npm install
+          npm run build
+
+      - name: Publish (trusted publishing + provenance)
+        run: |
+          cd ts
+          npm publish --provenance --access public

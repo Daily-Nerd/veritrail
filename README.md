@@ -74,7 +74,10 @@ go install github.com/Daily-Nerd/veritrail/go/cmd/veritrail-verify@v0.1.1     # 
 import "github.com/Daily-Nerd/veritrail/go"   // package veritrail → veritrail.Sign(...), veritrail.Verify(...)
 ```
 
-**npm — publishing soon** (package is built and conformant; release is pending the npm org). It will publish as either `veritrail` or `@daily-nerd/veritrail` — see [ROADMAP](ROADMAP.md).
+**npm — publishing soon** as **`@daily-nerd/veritrail`** (package is built and conformant; release is pending the npm org). Once live:
+```sh
+npm i @daily-nerd/veritrail
+```
 
 ## Spec & conformance
 
