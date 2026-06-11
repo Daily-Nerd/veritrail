@@ -48,7 +48,7 @@ jobs:
       - name: Build
         run: |
           cd ts
-          npm install
+          npm ci
           npm run build
 
       - name: Publish (trusted publishing + provenance)
