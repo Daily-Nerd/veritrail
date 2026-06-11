@@ -2,9 +2,12 @@
 
 All notable changes to veritrail are documented here. Format: [Keep a Changelog](https://keepachangelog.com/); versioning: [SemVer](https://semver.org/).
 
+> **Historical record — frozen at 0.1.1.** From the next release onward, changelogs are generated per implementation by release-please: **`ts/CHANGELOG.md`** (npm `@daily-nerd/veritrail`) and **`go/CHANGELOG.md`** (Go module). Versions stay linked, so both bump together.
+
 ## [0.1.1] — 2026-05-29
 
 ### Changed
+- **npm package name:** the TypeScript implementation publishes as **`@daily-nerd/veritrail`**. The bare `veritrail` name is taken on npm by an unrelated package, so the scoped name is final. The `veritrail-verify` CLI binary name is unchanged.
 - **Go module layout:** the library package moved to the module root. The import path is now `github.com/Daily-Nerd/veritrail/go` (was `…/go/veritrail`) — use `veritrail.Sign(...)`, `veritrail.Verify(...)`. Install the CLI with `go install github.com/Daily-Nerd/veritrail/go/cmd/veritrail-verify@v0.1.1`. (v0.1.0's nested import path is superseded; behavior and conformance unchanged — still 41/41 Go ≡ TS.)
 
 ## [0.1.0] — 2026-05-29
