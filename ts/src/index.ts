@@ -11,6 +11,9 @@
  * co-signing *middleware* exported here is SDK-free and safe for library consumers.
  */
 
+// --- Protocol version ---
+export { VERSION } from './version.js';
+
 // --- JCS canonicalization (RFC 8785) ---
 export { jcs, jcsBytes, jcsString } from './commands/jcs.js';
 export type { JcsInput, JcsOutput } from './commands/jcs.js';
