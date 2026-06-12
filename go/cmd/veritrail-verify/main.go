@@ -5,6 +5,7 @@
 package main
 
 import (
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -15,6 +16,14 @@ import (
 
 	"github.com/Daily-Nerd/veritrail/go"
 	"github.com/gowebpki/jcs"
+)
+
+// CLI-input-validation sentinels for the `sign` command. These map to machine
+// error codes in errorCode. They are local to the CLI because they describe
+// malformed CLI input, not library-level protocol violations.
+var (
+	errInvalidPrivateKey = errors.New("invalid_private_key")
+	errKidRequired       = errors.New("kid_required")
 )
 
 func main() {
@@ -52,6 +61,8 @@ func main() {
 		result, cmdErr = runVerifyChain(stdin)
 	case "a2a-artifact-hash":
 		result, cmdErr = runA2AArtifactHash(stdin)
+	case "sign":
+		result, cmdErr = runSign(stdin)
 	default:
 		writeError("unsupported_command")
 		return
@@ -92,6 +103,12 @@ func errorCode(err error) string {
 	}
 	if errors.Is(err, veritrail.ErrUnsupportedPart) {
 		return "unsupported_part"
+	}
+	if errors.Is(err, errInvalidPrivateKey) {
+		return "invalid_private_key"
+	}
+	if errors.Is(err, errKidRequired) {
+		return "kid_required"
 	}
 	return "invalid_input"
 }
@@ -286,5 +303,67 @@ func runA2AArtifactHash(stdin []byte) (json.RawMessage, error) {
 		OutputsHash:   outputsHash,
 		DescriptorHex: hex.EncodeToString(descriptorBytes),
 	}
+	return json.Marshal(out)
+}
+
+// runSign produces a deterministic EdDSA JWS signed receipt from a 32-byte Ed25519
+// seed. private_key_b64 is the RFC 8032 seed (NOT the 64-byte expanded key) — the
+// only runtime-portable form. We expand it via ed25519.NewKeyFromSeed and reuse the
+// existing veritrail.Sign primitive so framing matches Verify exactly.
+func runSign(stdin []byte) (json.RawMessage, error) {
+	var inp struct {
+		Receipt       json.RawMessage `json:"receipt"`
+		Kid           string          `json:"kid"`
+		PrivateKeyB64 string          `json:"private_key_b64"`
+	}
+	if err := json.Unmarshal(stdin, &inp); err != nil {
+		return nil, err
+	}
+
+	// receipt must be present and a JSON object.
+	if len(inp.Receipt) == 0 {
+		return nil, errors.New("invalid_input: missing receipt")
+	}
+	var receiptObj map[string]json.RawMessage
+	if err := json.Unmarshal(inp.Receipt, &receiptObj); err != nil {
+		return nil, err
+	}
+
+	// receipt_id must be absent (reuse the existing contract).
+	if _, present := receiptObj["receipt_id"]; present {
+		return nil, veritrail.ErrReceiptIDMustBeAbsent
+	}
+
+	// kid required.
+	if inp.Kid == "" {
+		return nil, errKidRequired
+	}
+
+	// Decode the 32-byte seed, accepting both standard and raw (unpadded) base64.
+	seed, err := base64.StdEncoding.DecodeString(inp.PrivateKeyB64)
+	if err != nil {
+		seed, err = base64.RawStdEncoding.DecodeString(inp.PrivateKeyB64)
+		if err != nil {
+			return nil, errInvalidPrivateKey
+		}
+	}
+	if len(seed) != ed25519.SeedSize {
+		return nil, errInvalidPrivateKey
+	}
+	priv := ed25519.NewKeyFromSeed(seed)
+
+	// Decode the receipt body into the typed Receipt and sign it.
+	var receipt veritrail.Receipt
+	if err := json.Unmarshal(inp.Receipt, &receipt); err != nil {
+		return nil, err
+	}
+	signed, err := veritrail.Sign(receipt, inp.Kid, priv)
+	if err != nil {
+		return nil, err
+	}
+
+	out := struct {
+		SignedReceipt string `json:"signed_receipt"`
+	}{SignedReceipt: signed}
 	return json.Marshal(out)
 }

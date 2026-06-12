@@ -1,0 +1,118 @@
+/**
+ * sign command — produce a deterministic EdDSA JWS signed receipt (conformance §10).
+ *
+ * Input:
+ *   { "receipt": <Receipt WITHOUT receipt_id>, "kid": "<string>",
+ *     "private_key_b64": "<base64 of a 32-byte Ed25519 RFC 8032 seed>" }
+ * Output:
+ *   { "signed_receipt": "<b64url(header).b64url(payload).b64url(sig)>" }
+ *
+ * The signing input and header/payload framing match the §7 verifier and the
+ * MCP middleware signer exactly, so a produced receipt round-trips through verify
+ * with no non_canonical_payload failure.
+ *
+ * KEY ENCODING (load-bearing): private_key_b64 is the 32-byte RFC 8032 seed — NOT
+ * the 64-byte expanded key. The seed is the only runtime-portable form. node:crypto
+ * has no direct "seed" import, so we wrap the seed into a PKCS8 DER by prefixing the
+ * fixed 16-byte Ed25519 PKCS8 header, then importing it.
+ */
+import { createPrivateKey, sign as cryptoSign, KeyObject } from 'node:crypto';
+import { jcsBytes, jcsString } from './jcs.js';
+
+export interface SignInput {
+  receipt: Record<string, unknown>;
+  kid: string;
+  private_key_b64: string;
+}
+
+export interface SignOutput {
+  signed_receipt: string;
+}
+
+/** The fixed 16-byte ASN.1/PKCS8 prefix for a raw Ed25519 private seed (RFC 8410). */
+const PKCS8_ED25519_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
+
+function b64url(buf: Buffer): string {
+  return buf.toString('base64url');
+}
+
+/**
+ * Decode base64, accepting BOTH standard and raw (unpadded) base64 — matching the
+ * `digest` command's tolerance. Returns null on invalid input.
+ */
+function decodeFlexibleBase64(s: string): Buffer | null {
+  // Node's 'base64' decoder is lenient and accepts both padded and unpadded input,
+  // but it silently ignores trailing garbage. Re-encode and compare lengths to
+  // reject genuinely malformed input while tolerating the padding difference.
+  if (typeof s !== 'string') return null;
+  try {
+    const buf = Buffer.from(s, 'base64');
+    // Round-trip guard: the decoded bytes must re-encode (no-pad) to the same
+    // alphabet content as the input (ignoring '=' padding).
+    const reencoded = buf.toString('base64').replace(/=+$/, '');
+    const normalizedInput = s.replace(/=+$/, '');
+    if (reencoded !== normalizedInput) return null;
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+/** Wrap a 32-byte Ed25519 seed into a node KeyObject. Returns null on failure. */
+function privateKeyFromSeed(seed: Buffer): KeyObject | null {
+  if (seed.length !== 32) return null;
+  try {
+    const der = Buffer.concat([PKCS8_ED25519_PREFIX, seed]);
+    return createPrivateKey({ key: der, format: 'der', type: 'pkcs8' });
+  } catch {
+    return null;
+  }
+}
+
+export function sign(input: SignInput): SignOutput | { error: string } {
+  // --- validate input shape ---
+  if (input === null || typeof input !== 'object') {
+    return { error: 'invalid_input' };
+  }
+  const receipt = input.receipt;
+  if (receipt === null || typeof receipt !== 'object' || Array.isArray(receipt)) {
+    return { error: 'invalid_input' };
+  }
+
+  // --- receipt_id must be absent (reuse the existing contract) ---
+  if (Object.prototype.hasOwnProperty.call(receipt, 'receipt_id')) {
+    return { error: 'receipt_id_must_be_absent' };
+  }
+
+  // --- kid required ---
+  const kid = input.kid;
+  if (typeof kid !== 'string' || kid === '') {
+    return { error: 'kid_required' };
+  }
+
+  // --- decode + validate the 32-byte seed ---
+  if (typeof input.private_key_b64 !== 'string') {
+    return { error: 'invalid_private_key' };
+  }
+  const seed = decodeFlexibleBase64(input.private_key_b64);
+  if (seed === null || seed.length !== 32) {
+    return { error: 'invalid_private_key' };
+  }
+  const privateKey = privateKeyFromSeed(seed);
+  if (privateKey === null) {
+    return { error: 'invalid_private_key' };
+  }
+
+  // --- stamp protocol version (mirrors veritrail.Sign / the middleware) ---
+  const payload = { ...receipt, v: 'veritrail/0.1' };
+
+  // --- frame: canonical header + JCS-canonical payload, EdDSA over the signing input ---
+  const header = { alg: 'EdDSA', kid };
+  const headerSeg = b64url(Buffer.from(jcsString(header), 'utf8'));
+  const payloadSeg = b64url(jcsBytes(payload));
+  const signingInput = Buffer.from(`${headerSeg}.${payloadSeg}`, 'ascii');
+  const sig = cryptoSign(null, signingInput, privateKey);
+  const signed_receipt = `${headerSeg}.${payloadSeg}.${b64url(sig)}`;
+
+  return { signed_receipt };
+}

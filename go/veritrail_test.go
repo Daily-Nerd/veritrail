@@ -1,6 +1,7 @@
 package veritrail_test
 
 import (
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -375,6 +376,102 @@ func TestVectors_SSEOutputsHash(t *testing.T) {
 				t.Errorf("outputs_hash = %s, want %s", outputsHash, anchor.OutputsHash)
 			}
 		})
+	}
+}
+
+// -------------------------------------------------------------------
+// Vector-driven test for sign (§10) + sign↔verify round-trip
+// -------------------------------------------------------------------
+
+func TestVectors_Sign(t *testing.T) {
+	for _, v := range loadVectors(t) {
+		if v.Command != "sign" {
+			continue
+		}
+		v := v
+		t.Run(v.Name, func(t *testing.T) {
+			var inp struct {
+				Receipt       json.RawMessage `json:"receipt"`
+				Kid           string          `json:"kid"`
+				PrivateKeyB64 string          `json:"private_key_b64"`
+			}
+			if err := json.Unmarshal(v.Input, &inp); err != nil {
+				t.Fatal(err)
+			}
+
+			// Decode the 32-byte seed (standard or raw base64), expand to a key.
+			seed, err := base64.StdEncoding.DecodeString(inp.PrivateKeyB64)
+			if err != nil {
+				seed, err = base64.RawStdEncoding.DecodeString(inp.PrivateKeyB64)
+				if err != nil {
+					t.Fatalf("base64 decode seed: %v", err)
+				}
+			}
+			if len(seed) != ed25519.SeedSize {
+				t.Fatalf("seed len = %d, want %d", len(seed), ed25519.SeedSize)
+			}
+			priv := ed25519.NewKeyFromSeed(seed)
+
+			var receipt veritrail.Receipt
+			if err := json.Unmarshal(inp.Receipt, &receipt); err != nil {
+				t.Fatal(err)
+			}
+			signed, err := veritrail.Sign(receipt, inp.Kid, priv)
+			if err != nil {
+				t.Fatalf("Sign error: %v", err)
+			}
+
+			var anchor struct {
+				SignedReceipt string `json:"signed_receipt"`
+			}
+			if err := json.Unmarshal(v.Anchor, &anchor); err != nil {
+				t.Fatal(err)
+			}
+			if signed != anchor.SignedReceipt {
+				t.Errorf("signed_receipt mismatch:\n got:  %s\n want: %s", signed, anchor.SignedReceipt)
+			}
+
+			// Round-trip strengthener: the produced JWS must verify under the
+			// public key derived from the same seed. Proves sign↔verify interop.
+			pub := priv.Public().(ed25519.PublicKey)
+			x := base64.RawURLEncoding.EncodeToString(pub)
+			valid, reason := veritrail.Verify(veritrail.VerifyInput{
+				SignedReceipt: signed,
+				Keys: map[string]map[string]veritrail.RegistryKey{
+					receipt.PerformerID: {
+						inp.Kid: {Kty: "OKP", Crv: "Ed25519", X: x, Alg: "EdDSA", Status: "active"},
+					},
+				},
+			})
+			if !valid || reason != "ok" {
+				t.Errorf("round-trip verify = (%v, %q), want (true, \"ok\")", valid, reason)
+			}
+		})
+	}
+}
+
+func TestSign_Errors(t *testing.T) {
+	goodSeed := ed25519.NewKeyFromSeed(make([]byte, ed25519.SeedSize))
+	r := veritrail.Receipt{
+		Binding:     "mcp",
+		PerformerID: "srv-ed",
+		Method:      "mcp:echo",
+		InputsHash:  "uEiAs8k26X7CjDiboOyrFueKeGxYeXB-nQl5zBDNik4uYJA",
+		OutputsHash: "uEiAs8k26X7CjDiboOyrFueKeGxYeXB-nQl5zBDNik4uYJA",
+		Cost:        veritrail.Cost{Tokens: "10", USDMicros: "0", WallMs: "3"},
+		Status:      "OK",
+		LogPolicy:   "best_effort",
+		Ts:          "2026-05-28T00:00:00Z",
+		Nonce:       "uEiDjsMRCmPwcFJr79MiZb7kkJ65B5GSbk0yklZkbeFK4VQ",
+	}
+
+	// empty kid → error
+	if _, err := veritrail.Sign(r, "", goodSeed); err == nil {
+		t.Error("Sign with empty kid: expected error, got nil")
+	}
+	// wrong-size key → error
+	if _, err := veritrail.Sign(r, "ed-1", ed25519.PrivateKey(make([]byte, 16))); err == nil {
+		t.Error("Sign with short key: expected error, got nil")
 	}
 }
 
