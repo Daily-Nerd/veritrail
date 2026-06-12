@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.rp.outputs.releases_created }}
-      ts_version: ${{ steps.rp.outputs['ts--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
@@ -90,8 +89,10 @@ jobs:
       - name: Tag and release the Go module
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.release-please.outputs.ts_version }}
         run: |
+          # Single repo version lives in ts/package.json (bumped by release-please
+          # extra-files). Read it from the released commit — no output-key coupling.
+          VERSION=$(node -p "require('./ts/package.json').version")
           tag="go/v${VERSION}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -99,4 +100,4 @@ jobs:
           git push origin "$tag"
           gh release create "$tag" \
             --title "$tag" \
-            --notes "Go module release tracking @daily-nerd/veritrail@${VERSION}. Changelog: ts/CHANGELOG.md."
+            --notes "Go module release tracking @daily-nerd/veritrail@${VERSION}. Changelog: CHANGELOG.md."

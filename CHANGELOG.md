@@ -2,7 +2,7 @@
 
 All notable changes to veritrail are documented here. Format: [Keep a Changelog](https://keepachangelog.com/); versioning: [SemVer](https://semver.org/).
 
-> **Historical record — frozen at 0.1.1.** From the next release onward, changelogs are generated per implementation by release-please: **`ts/CHANGELOG.md`** (npm `@daily-nerd/veritrail`) and **`go/CHANGELOG.md`** (Go module). Versions stay linked, so both bump together.
+> **One version, one changelog.** veritrail ships the Go module and the npm package (`@daily-nerd/veritrail`) in lockstep under a single version — any change to either implementation bumps it. release-please generates entries here from conventional commits. The `0.2.0`–`0.2.1` entries (the npm-only transition releases) live in `ts/CHANGELOG.md`; unified history resumes from `0.2.2`.
 
 ## [0.1.1] — 2026-05-29
 
