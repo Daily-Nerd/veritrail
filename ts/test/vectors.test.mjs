@@ -26,6 +26,7 @@ const { costCanon } = await import(`${DIST}/commands/cost-canon.js`);
 const { verify } = await import(`${DIST}/commands/verify.js`);
 const { verifyChain } = await import(`${DIST}/commands/verify-chain.js`);
 const { a2aArtifactHash } = await import(`${DIST}/commands/a2a-artifact-hash.js`);
+const { sign } = await import(`${DIST}/commands/sign.js`);
 
 function loadVector(filename) {
   return JSON.parse(readFileSync(join(VECTORS_DIR, filename), 'utf8'));
@@ -42,6 +43,7 @@ function runCommand(cmd, input) {
     case 'verify': return verify(input);
     case 'verify-chain': return verifyChain(input);
     case 'a2a-artifact-hash': return a2aArtifactHash(input);
+    case 'sign': return sign(input);
     default: return { error: 'unknown_command' };
   }
 }
@@ -237,3 +239,75 @@ for (const filename of A2A_VECTORS) {
     assertAnchorMatch(result, v.anchor, v.name);
   });
 }
+
+// --- sign/ed25519 ---
+// The anchor signed_receipt was generated ONCE from the reference impl (Go), then
+// confirmed byte-identical from this TS impl. EdDSA over a fixed seed is deterministic,
+// so the frozen string is stable. See sign-ed25519.json.
+test('sign/ed25519', () => {
+  const v = loadVector('sign-ed25519.json');
+  const result = runCommand(v.command, v.input);
+  assertAnchorMatch(result, v.anchor, v.name);
+});
+
+// --- sign error codes ---
+test('sign/kid-required', () => {
+  const v = loadVector('sign-ed25519.json');
+  const result = sign({ ...v.input, kid: '' });
+  assert.deepStrictEqual(result, { error: 'kid_required' });
+});
+
+test('sign/invalid-private-key-bad-base64', () => {
+  const v = loadVector('sign-ed25519.json');
+  const result = sign({ ...v.input, private_key_b64: 'not!!base64!!' });
+  assert.deepStrictEqual(result, { error: 'invalid_private_key' });
+});
+
+test('sign/invalid-private-key-wrong-length', () => {
+  const v = loadVector('sign-ed25519.json');
+  // 16 zero bytes, not 32
+  const result = sign({ ...v.input, private_key_b64: Buffer.alloc(16).toString('base64') });
+  assert.deepStrictEqual(result, { error: 'invalid_private_key' });
+});
+
+test('sign/receipt-id-must-be-absent', () => {
+  const v = loadVector('sign-ed25519.json');
+  const result = sign({ ...v.input, receipt: { ...v.input.receipt, receipt_id: 'u123' } });
+  assert.deepStrictEqual(result, { error: 'receipt_id_must_be_absent' });
+});
+
+// --- sign↔verify round-trip: prove interop, not just a frozen string ---
+test('sign/roundtrip-verifies', () => {
+  const v = loadVector('sign-ed25519.json');
+  const signed = sign(v.input);
+  assert.equal(typeof signed.signed_receipt, 'string');
+
+  // Public key derived from the fixed seed 0x01..0x20 (PKCS8-wrapped Ed25519).
+  const keys = {
+    'srv-ed': {
+      'ed-1': {
+        kty: 'OKP',
+        crv: 'Ed25519',
+        x: 'ebVWLo_mVPlAeLES6KmLp5AfhTrmlb7X4OORC60ElmQ',
+        alg: 'EdDSA',
+        status: 'active',
+      },
+    },
+  };
+  const verdict = verify({
+    signed_receipt: signed.signed_receipt,
+    keys,
+    policy: { expected_binding: null, expected_method: null },
+  });
+  assert.deepStrictEqual(verdict, { valid: true, reason: 'ok' });
+});
+
+// --- sign accepts raw (unpadded) base64, same as digest ---
+test('sign/accepts-unpadded-base64', () => {
+  const v = loadVector('sign-ed25519.json');
+  const padded = v.input.private_key_b64;
+  const unpadded = padded.replace(/=+$/, '');
+  const a = sign(v.input);
+  const b = sign({ ...v.input, private_key_b64: unpadded });
+  assert.deepStrictEqual(a, b);
+});

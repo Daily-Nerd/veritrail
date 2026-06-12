@@ -17,6 +17,7 @@ import { costCanon } from './commands/cost-canon.js';
 import { verify } from './commands/verify.js';
 import { verifyChain } from './commands/verify-chain.js';
 import { a2aArtifactHash } from './commands/a2a-artifact-hash.js';
+import { sign } from './commands/sign.js';
 import { jcsString } from './commands/jcs.js';
 
 async function readStdin(): Promise<string> {
@@ -81,6 +82,9 @@ async function main() {
         break;
       case 'a2a-artifact-hash':
         result = a2aArtifactHash(input as Parameters<typeof a2aArtifactHash>[0]);
+        break;
+      case 'sign':
+        result = sign(input as Parameters<typeof sign>[0]);
         break;
       default:
         result = { error: 'unknown_command' };

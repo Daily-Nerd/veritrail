@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml"><img src="https://github.com/Daily-Nerd/veritrail/actions/workflows/conformance.yml/badge.svg" alt="conformance"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License: Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/conformance-41%2F41-brightgreen" alt="conformance 41/41">
+  <img src="https://img.shields.io/badge/conformance-42%2F42-brightgreen" alt="conformance 42/42">
 </p>
 
 ---
@@ -78,6 +78,10 @@ import "github.com/Daily-Nerd/veritrail/go"   // package veritrail → veritrail
 ```sh
 npm i @daily-nerd/veritrail
 ```
+
+## Quickstart
+
+New here? **[docs/QUICKSTART.md](docs/QUICKSTART.md)** takes you from install to a signed, independently-verifiable receipt — the production MCP co-signing path plus a local `sign | verify` round-trip with the CLI.
 
 ## Spec & conformance
 

@@ -47,6 +47,10 @@ export type { VerifyChainInput, VerifyChainOutput } from './commands/verify-chai
 export { a2aArtifactHash, buildDescriptor } from './commands/a2a-artifact-hash.js';
 export type { A2AArtifactHashInput, A2AArtifactHashOutput } from './commands/a2a-artifact-hash.js';
 
+// --- CLI sign command (§10) — deterministic EdDSA JWS from a 32-byte seed ---
+export { sign as signCommand } from './commands/sign.js';
+export type { SignInput, SignOutput } from './commands/sign.js';
+
 // --- Signing + receipt construction (SDK-free core) ---
 export {
   signReceipt,
