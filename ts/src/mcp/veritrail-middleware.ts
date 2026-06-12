@@ -23,6 +23,7 @@ import {
 import { jcsBytes, jcsString } from '../commands/jcs.js';
 import { digestBytes } from '../commands/digest.js';
 import type { RegistryJwk } from '../commands/verify.js';
+import { VERSION } from '../version.js';
 
 /** The _meta key the receipt JWS is published under (design §13). */
 export const RECEIPT_META_KEY = 'dev.veritrail/receipt';
@@ -120,7 +121,7 @@ export interface BuildReceiptOptions {
 export function buildReceiptPayload(opts: BuildReceiptOptions): Record<string, unknown> {
   const { signer, toolName, params, result } = opts;
   return {
-    v: 'veritrail/0.1',
+    v: VERSION,
     binding: 'mcp',
     action_ref: null,
     performer_id: signer.performerId,

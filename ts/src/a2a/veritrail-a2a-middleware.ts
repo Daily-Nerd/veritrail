@@ -20,6 +20,7 @@ import {
   RECEIPT_META_KEY,
 } from '../mcp/veritrail-middleware.js';
 import { a2aArtifactHash } from '../commands/a2a-artifact-hash.js';
+import { VERSION } from '../version.js';
 
 export { RECEIPT_META_KEY };
 
@@ -69,7 +70,7 @@ export interface BuildA2AReceiptOptions {
 /** Build the Veritrail Receipt payload for an A2A task. */
 export function buildA2AReceiptPayload(opts: BuildA2AReceiptOptions): Record<string, unknown> {
   return {
-    v: 'veritrail/0.1',
+    v: VERSION,
     binding: 'a2a',
     action_ref: null,
     performer_id: opts.signer.performerId,

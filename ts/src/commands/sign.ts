@@ -18,6 +18,7 @@
  */
 import { createPrivateKey, sign as cryptoSign, KeyObject } from 'node:crypto';
 import { jcsBytes, jcsString } from './jcs.js';
+import { VERSION } from '../version.js';
 
 export interface SignInput {
   receipt: Record<string, unknown>;
@@ -104,7 +105,7 @@ export function sign(input: SignInput): SignOutput | { error: string } {
   }
 
   // --- stamp protocol version (mirrors veritrail.Sign / the middleware) ---
-  const payload = { ...receipt, v: 'veritrail/0.1' };
+  const payload = { ...receipt, v: VERSION };
 
   // --- frame: canonical header + JCS-canonical payload, EdDSA over the signing input ---
   const header = { alg: 'EdDSA', kid };
