@@ -16,16 +16,15 @@ permissions:
   pull-requests: write
 
 jobs:
-  # 1. Maintain the release PR. On its merge, cut tags + GitHub Releases.
-  #    Versions are linked (go + ts share one line) — see release-please-config.json.
+  # 1. Maintain the release PR. On its merge, cut the npm (ts) tag v<version> +
+  #    GitHub Release. The Go module tag is minted separately (job 3).
   #    Only runs on push to main; skipped on manual dispatch.
   release-please:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
-      # Manifest mode exposes the top-level boolean `releases_created`
-      # (true when ANY linked package released). Gate the publish on it.
       releases_created: ${{ steps.rp.outputs.releases_created }}
+      ts_version: ${{ steps.rp.outputs['ts--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
@@ -70,3 +69,34 @@ jobs:
         run: |
           cd ts
           npm publish --provenance --access public
+
+  # 3. Mint the matching Go module tag. A Go release is just a tag (no version
+  #    file, no publish), so the workflow creates go/v<version> on the same commit
+  #    release-please tagged as v<version> — keeping the Go module and the npm
+  #    package in lockstep. release-please's go release-type can't be given a
+  #    component name, so it can't emit the go/ tag prefix itself (it collided
+  #    with the ts v* tag); minting it here is deterministic.
+  tag-go:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag and release the Go module
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.release-please.outputs.ts_version }}
+        run: |
+          tag="go/v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$tag" "${GITHUB_SHA}"
+          git push origin "$tag"
+          gh release create "$tag" \
+            --title "$tag" \
+            --notes "Go module release tracking @daily-nerd/veritrail@${VERSION}. Changelog: ts/CHANGELOG.md."
