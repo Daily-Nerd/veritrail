@@ -3,6 +3,13 @@ name: release
 on:
   push:
     branches: [main]
+  # Manual escape hatch: publish a specific tag to npm with provenance.
+  # Used to recover a release whose in-run publish was missed, or to re-publish.
+  workflow_dispatch:
+    inputs:
+      publish_ref:
+        description: "Git tag to build and publish to npm (e.g. v0.2.0)"
+        required: true
 
 permissions:
   contents: write
@@ -11,29 +18,37 @@ permissions:
 jobs:
   # 1. Maintain the release PR. On its merge, cut tags + GitHub Releases.
   #    Versions are linked (go + ts share one line) — see release-please-config.json.
+  #    Only runs on push to main; skipped on manual dispatch.
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
-      ts_release_created: ${{ steps.rp.outputs['ts--release_created'] }}
-      ts_tag: ${{ steps.rp.outputs['ts--tag_name'] }}
+      # Manifest mode exposes the top-level boolean `releases_created`
+      # (true when ANY linked package released). Gate the publish on it.
+      releases_created: ${{ steps.rp.outputs.releases_created }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: rp
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  # 2. Publish the npm package when the ts component is released.
-  #    Auth is OIDC trusted publishing (no NPM_TOKEN) — provenance is attested.
-  #    Requires a trusted publisher registered on npm for this repo + this workflow file.
+  # 2. Publish the npm package.
+  #    Fires automatically when a release is cut, OR manually via workflow_dispatch
+  #    against a given tag. Auth is OIDC trusted publishing (no NPM_TOKEN) —
+  #    provenance is attested. Requires a trusted publisher registered on npm
+  #    for this repo + this workflow file.
   publish-npm:
     needs: release-please
-    if: ${{ needs.release-please.outputs.ts_release_created == 'true' }}
+    if: ${{ always() && (needs.release-please.outputs.releases_created == 'true' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write # mint OIDC token for npm provenance
     steps:
       - uses: actions/checkout@v4
+        with:
+          # On manual dispatch, build the requested tag; otherwise the pushed ref.
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish_ref || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
